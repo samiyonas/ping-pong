@@ -4,27 +4,8 @@ PADDLE_THICKNESS = BALL_SIZE
 PADDLE_PADDING = BALL_SIZE
 BALL_SPEED = 1000*0.4
 
-w = love.graphics.getWidth()
-h = love.graphics.getHeight()
 
-PADDLE_SPEED = BALL_SPEED*1.2
-
-ball_x = 0.0
-ball_y = 0.0
-ball_dx = -1.0 --speed
-ball_dy = 1.0 --speed
-
-NET_GIRTH = 3 
-NET_COUNT = 51
-
-paddle_left_y = 0
-paddle_right_y = 0
-paddle_left_x = PADDLE_PADDING
-paddle_right_x = w - PADDLE_PADDING - PADDLE_THICKNESS
-
-DIGIT_SIZE = BALL_SIZE
-
-score_right = 0
+score_right = 0 
 score_left = 0
 
 
@@ -41,6 +22,45 @@ digits = {
    [9] = {{1,1,1}, {1,0,1}, {1,1,1}, {0,0,1}, {1,1,1}},
 }
 
+function count_digits(n)
+    assert(n >= 0)
+    if n == 0 then
+        return 1
+    end
+    local count = 0
+
+    while n > 0 do
+        count = count + 1
+        n = math.floor(n / 10)
+    end
+
+    return count
+end
+
+function number_width(n)
+    local count = count_digits(n)
+    return count*3*DIGIT_SIZE + (count - 1)*DIGIT_SIZE
+end
+
+function render_number(n, x, y)
+    assert(n >= 0)
+    if n == 0 then
+        render_digit(digits[n], x, y)
+        return 1
+    end
+    local count = count_digits(n)
+    x = x + (count - 1)*4*DIGIT_SIZE
+
+    while n > 0 do
+        local digit = n%10
+        render_digit(digits[digit], x, y)
+        n = math.floor(n / 10)
+        x = x - 4*DIGIT_SIZE
+    end
+
+    return count
+end
+
 function render_digit(digit, x, y)
     for cell_y, row in ipairs(digit) do
         for cell_x, col in ipairs(row) do
@@ -49,6 +69,28 @@ function render_digit(digit, x, y)
             end
         end
     end
+end
+
+function love.load()
+    local w = love.graphics.getWidth()
+    local h = love.graphics.getHeight()
+
+    PADDLE_SPEED = BALL_SPEED*1.2
+
+    ball_x = 0.0
+    ball_y = 0.0
+    ball_dx = -1.0 --speed
+    ball_dy = 1.0 --speed
+
+    NET_GIRTH = 3 
+    NET_COUNT = 51
+
+    paddle_left_y = 0
+    paddle_right_y = 0
+    paddle_left_x = PADDLE_PADDING
+    paddle_right_x = w - PADDLE_PADDING - PADDLE_THICKNESS
+
+    DIGIT_SIZE = BALL_SIZE
 end
 
 function love.draw()
@@ -64,9 +106,9 @@ function love.draw()
         end
     end
     love.graphics.rectangle("fill", ball_x, ball_y, BALL_SIZE, BALL_SIZE)
-    render_digit(digits[score_left], w/2 - 6*PADDLE_PADDING, 2*DIGIT_SIZE)
-    render_digit(digits[score_right], w/2 + 3*PADDLE_PADDING, 2*DIGIT_SIZE)
-
+    local score_left_width = number_width(score_left)
+    render_number(score_left, w/2 - score_left_width - 2*DIGIT_SIZE, 2*DIGIT_SIZE)
+    render_number(score_right, w/2 + 2*DIGIT_SIZE, 2*DIGIT_SIZE)
     love.graphics.rectangle("fill", paddle_left_x, paddle_left_y, PADDLE_THICKNESS, PADDLE_HEIGHT)
 
     local paddle_right_x = w - PADDLE_PADDING - PADDLE_THICKNESS
@@ -93,7 +135,6 @@ function love.update(dt)
         ball_dx = 1
         ball_dy = 1
     elseif (ball_nx + BALL_SIZE >= w) then
-        print("left scored!")
         score_left = score_left + 1
         ball_x = w/2 - BALL_SIZE/2
         ball_y = h/2 - BALL_SIZE/2
